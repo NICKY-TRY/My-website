@@ -137,7 +137,7 @@
       .project-card:hover video {
         transform: scale(1.05);
       }
-      /* 视频播放按钮 */
+      /* 视频播放按钮 - 修复z-index层级问题 */
       .video-play-btn {
         position: absolute;
         top: 50%;
@@ -151,8 +151,9 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        z-index: 10;
+        z-index: 20; /* 提升层级，确保能被点击 */
         transition: all 0.3s ease;
+        pointer-events: auto; /* 确保按钮可点击 */
       }
       .video-play-btn:hover {
         background-color: rgba(30, 144, 255, 1);
@@ -669,6 +670,7 @@
         // 绑定 touchstart（移动端优先）
         button.addEventListener('touchstart', (e) => {
           e.preventDefault(); // 阻止事件穿透/冒泡
+          e.stopPropagation(); // 新增：阻止事件冒泡
           const imgSrc = button.getAttribute('data-img');
           const title = button.getAttribute('data-title');
           openModal(imgSrc, title);
@@ -676,6 +678,7 @@
         // 保留 click（兼容桌面端）
         button.addEventListener('click', (e) => {
           e.preventDefault();
+          e.stopPropagation(); // 新增：阻止事件冒泡
           const imgSrc = button.getAttribute('data-img');
           const title = button.getAttribute('data-title');
           openModal(imgSrc, title);
@@ -697,9 +700,10 @@
       });
     }
 
-    // 新增：视频模态框功能
+    // 新增：视频模态框功能 - 修复事件绑定逻辑
     function initVideoModal() {
-      const viewVideoButtons = document.querySelectorAll('.view-video-btn, .view-project-btn[data-video]');
+      const viewVideoButtons = document.querySelectorAll('.view-video-btn');
+      const viewProjectVideoButtons = document.querySelectorAll('.view-project-btn[data-video]');
       const videoModal = document.getElementById('videoModal');
       const modalVideo = document.getElementById('modalVideo');
       const modalVideoTitle = document.getElementById('modalVideoTitle');
@@ -708,19 +712,26 @@
 
       // 打开视频模态框
       function openVideoModal(videoSrc, title) {
+        // 重置视频源，避免缓存问题
+        modalVideo.src = '';
         modalVideo.src = videoSrc;
         modalVideoTitle.textContent = title;
         videoModal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        // 自动播放（可选）
-        modalVideo.play().catch(err => console.log('Auto-play prevented:', err));
+        // 自动播放（添加兼容性处理）
+        setTimeout(() => {
+          modalVideo.play().catch(err => {
+            console.log('Auto-play prevented, please click play button:', err);
+          });
+        }, 100);
       }
 
-      // 绑定视频按钮事件
+      // 绑定圆形播放按钮事件
       viewVideoButtons.forEach(button => {
         // 移动端
         button.addEventListener('touchstart', (e) => {
           e.preventDefault();
+          e.stopPropagation(); // 新增：阻止事件冒泡
           const videoSrc = button.getAttribute('data-video');
           const title = button.getAttribute('data-title');
           openVideoModal(videoSrc, title);
@@ -728,6 +739,27 @@
         // 桌面端
         button.addEventListener('click', (e) => {
           e.preventDefault();
+          e.stopPropagation(); // 新增：阻止事件冒泡
+          const videoSrc = button.getAttribute('data-video');
+          const title = button.getAttribute('data-title');
+          openVideoModal(videoSrc, title);
+        });
+      });
+
+      // 绑定overlay层的播放按钮事件
+      viewProjectVideoButtons.forEach(button => {
+        // 移动端
+        button.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation(); // 新增：阻止事件冒泡
+          const videoSrc = button.getAttribute('data-video');
+          const title = button.getAttribute('data-title');
+          openVideoModal(videoSrc, title);
+        });
+        // 桌面端
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation(); // 新增：阻止事件冒泡
           const videoSrc = button.getAttribute('data-video');
           const title = button.getAttribute('data-title');
           openVideoModal(videoSrc, title);
